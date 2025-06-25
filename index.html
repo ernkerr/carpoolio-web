@@ -22,12 +22,45 @@
   <body>
     <div class="container">
       <h1>Welcome to Carpoolio!</h1>
-      <p>Check out this trip on our app!</p>
+      <div id="trip-details">
+        <!-- Trip details will be loaded here -->
+      </div>
       <div class="cta">
-        <a href="https://yourappstorelink.com" target="_blank">
-          <button>Download the App</button>
-        </a>
+        <button onclick="downloadApp()">Download the App</button>
       </div>
     </div>
+    <script>
+      function getTripId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("tripId");
+      }
+
+      async function fetchTripDetails(tripId) {
+        // Replace with your actual API endpoint
+        const response = await fetch(
+          `https://api.yourbackend.com/trips/${tripId}`
+        );
+        const trip = await response.json();
+        document.getElementById("trip-details").innerHTML = `
+                <h2>${trip.name}</h2>
+                <p>Created on: ${new Date(
+                  trip.created_at
+                ).toLocaleDateString()}</p>
+                <p>${trip.description}</p>
+            `;
+      }
+
+      function downloadApp() {
+        window.location.href = "https://yourappstorelink.com";
+      }
+
+      const tripId = getTripId();
+      if (tripId) {
+        fetchTripDetails(tripId);
+      } else {
+        document.getElementById("trip-details").innerHTML =
+          "<p>Invalid trip ID.</p>";
+      }
+    </script>
   </body>
 </html>
