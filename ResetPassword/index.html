@@ -95,10 +95,21 @@
     <script type="module">
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
       // Initialize Supabase client with injected credentials (replaced at build time)
-      const supabase = createClient(
-        "__SUPABASE_URL__",
-        "__SUPABASE_ANON_KEY__"
-      );
+      const SUPABASE_URL = "__SUPABASE_URL__";
+      const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
+
+      // Show a clear error if the config is missing (placeholders not replaced)
+      if (
+        SUPABASE_URL.includes("__SUPABASE_URL__") ||
+        SUPABASE_ANON_KEY.includes("__SUPABASE_ANON_KEY__")
+      ) {
+        document.body.innerHTML = `<div style='max-width: 400px; margin: 40px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); font-family: sans-serif; color: #d8000c; text-align: center;'>\n<b>Configuration Error</b><br>Your Supabase credentials were not injected at build time.<br>Please contact support or try again later.</div>`;
+        throw new Error(
+          "Supabase credentials missing: placeholders not replaced."
+        );
+      }
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Get references to form elements
       const form = document.getElementById("resetForm");
