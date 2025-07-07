@@ -104,8 +104,6 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDIxNDgsImV4cCI6MjA1OTI3ODE0OH0.Mt8wplXkCOtXb0bShclHgaodX06oEiX4xpMkvwsCic4"
       );
 
-      console.log("[INIT] Reset password page loaded");
-
       // Get references to form elements
       const form = document.getElementById("resetForm");
       const newPasswordInput = document.getElementById("newPassword");
@@ -115,7 +113,6 @@
 
       // Helper to show a message to the user
       function showMessage(text, type) {
-        console.log(`[UI] Showing ${type} message:`, text);
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
         messageDiv.style.display = "block";
@@ -129,7 +126,6 @@
             data: { session },
           } = await supabase.auth.getSession();
           if (session) {
-            console.log("[SESSION] Session established.");
             return session;
           }
           await new Promise((res) => setTimeout(res, intervalMs));
@@ -176,11 +172,10 @@
 
         try {
           showMessage("Updating password...", "success");
-          const { data, error } = await supabase.auth.updateUser({
+          const { error } = await supabase.auth.updateUser({
             password: newPassword,
           });
           if (error) {
-            console.error("[API] Password update failed:", error);
             showMessage(error.message || "An error occurred.", "error");
             submitButton.disabled = false;
             return;
@@ -194,7 +189,6 @@
             window.location.href = "carpoolio://login";
           }, 2000);
         } catch (err) {
-          console.error("[ERROR] Password reset error:", err);
           showMessage(err.message || "An error occurred.", "error");
         } finally {
           submitButton.disabled = false;
