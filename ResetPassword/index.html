@@ -185,23 +185,44 @@
 
         try {
           console.log("[API] Attempting password reset with token");
-          // Attempt to update the user's password using the token
-          const { data, error } = await supabase.auth.updateUser(
-            { password: newPassword },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
 
-          if (error) {
-            console.error("[API] Password reset failed:", error);
-            throw error;
+          // First verify the recovery token
+          const { data: verifyData, error: verifyError } =
+            await supabase.auth.verifyOtp({
+              type: "recovery",
+              email: null, // we don't have the email, it's encoded in the token
+              token: token,
+            });
+
+          if (verifyError) {
+            console.error("[API] Token verification failed:", verifyError);
+            throw verifyError;
+          }
+
+          console.log("[AUTH] Token verified successfully");
+
+          // Now that we have a valid session from verifyOtp, update the password
+          const { data: updateData, error: updateError } =
+            await supabase.auth.updateUser({
+              password: newPassword,
+            });
+
+          if (updateError) {
+            console.error("[API] Password update failed:", updateError);
+            throw updateError;
           }
 
           console.log("[API] Password reset successful");
           showMessage(
-            "Password reset successfully! You can now log in.",
+            "Password reset successfully! You can now log in to the app.",
             "success"
           );
           form.style.display = "none";
+
+          // Redirect to app after 2 seconds
+          setTimeout(() => {
+            window.location.href = "carpoolio://login";
+          }, 2000);
         } catch (err) {
           console.error("[ERROR] Password reset error:", err);
           showMessage(err.message || "An error occurred.", "error");
