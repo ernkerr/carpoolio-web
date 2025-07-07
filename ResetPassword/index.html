@@ -195,24 +195,46 @@
 
       // Helper to show message
       function showMessage(text, type) {
+        console.log("Showing message:", { text, type });
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
         messageDiv.style.display = "block";
       }
 
-      // Get URL parameters
+      // Get URL parameters including hash fragments
       function getUrlParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-          token: params.get("token"),
-          type: params.get("type"),
-        };
+        // First try the URL search params
+        const searchParams = new URLSearchParams(window.location.search);
+        const token = searchParams.get("token");
+        const type = searchParams.get("type");
+
+        console.log("URL params:", { token, type });
+
+        // If no token in search params, try the hash
+        if (!token) {
+          const hashParams = new URLSearchParams(
+            window.location.hash.substring(1)
+          );
+          const hashToken = hashParams.get("access_token");
+          console.log("Hash params:", { hashToken });
+          return {
+            token: hashToken,
+            type: "recovery",
+          };
+        }
+
+        return { token, type };
       }
 
       // Password validation
       function validatePasswords() {
         const newPassword = newPasswordInput.value;
         const confirmPassword = confirmPasswordInput.value;
+
+        console.log("Validating passwords:", {
+          passwordLength: newPassword.length,
+          passwordsMatch: newPassword === confirmPassword,
+        });
 
         if (newPassword.length < 8) {
           showMessage("Password must be at least 8 characters long", "error");
@@ -230,6 +252,7 @@
       // Form submission handler
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        console.log("Form submitted");
 
         // Disable form while processing
         submitButton.disabled = true;
@@ -243,23 +266,22 @@
 
           // Get token from URL params
           const { token, type } = getUrlParams();
+          console.log("Got token and type:", { token, type });
 
-          if (!token || type !== "recovery") {
+          if (!token) {
             showMessage("Invalid or missing reset token", "error");
             return;
           }
 
+          console.log("Attempting password reset with token");
+
           // Update password
-          const { error } = await supabase.auth.updateUser(
-            {
-              password: newPasswordInput.value,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+          const { data, error } = await supabase.auth.updateUser(
+            { password: newPasswordInput.value },
+            { headers: { Authorization: `Bearer ${token}` } }
           );
+
+          console.log("Password reset response:", { data, error });
 
           if (error) {
             throw error;
@@ -280,13 +302,16 @@
         }
       });
 
-      // Clear form data on page load
+      // Check token on page load
       window.addEventListener("load", () => {
+        console.log("Page loaded, checking token");
         form.reset();
 
         // Check if we have a valid token
         const { token, type } = getUrlParams();
-        if (!token || type !== "recovery") {
+        console.log("Initial token check:", { token, type });
+
+        if (!token) {
           showMessage(
             "Invalid or expired reset link. Please request a new password reset.",
             "error"
