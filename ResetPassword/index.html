@@ -70,7 +70,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>Reset Your Password</h1>
+      <h1>Reset Your Password for Carpoolio</h1>
       <form id="resetForm">
         <div class="form-group">
           <label for="newPassword">New Password</label>
@@ -122,108 +122,75 @@
         messageDiv.style.display = "block";
       }
 
-      // Helper to extract the reset token from the URL
-      function getToken() {
-        console.log("[SECURITY] Extracting token from URL");
-        const params = new URLSearchParams(window.location.search);
-        let token = params.get("token");
-        let email = params.get("email");
-
-        if (!token && window.location.hash) {
-          console.log(
-            "[SECURITY] Token not found in query params, checking hash"
-          );
-          const hashParams = new URLSearchParams(
-            window.location.hash.substring(1)
-          );
-          token = hashParams.get("access_token");
-          email = hashParams.get("email");
-        }
-
-        if (token) {
-          console.log("[SECURITY] Token found:", token.slice(0, 10) + "...");
-          if (email) {
-            console.log("[SECURITY] Email found:", email);
+      // Wait for Supabase session to be established (if recovery token is present)
+      async function waitForSession(maxWaitMs = 5000, intervalMs = 200) {
+        const start = Date.now();
+        while (Date.now() - start < maxWaitMs) {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session) {
+            console.log("[SESSION] Session established.");
+            return session;
           }
-        } else {
-          console.warn("[SECURITY] No token found in URL");
+          await new Promise((res) => setTimeout(res, intervalMs));
         }
-
-        return { token, email };
+        return null;
       }
+
+      // On page load, check for session and show form or error
+      (async () => {
+        messageDiv.style.display = "none";
+        form.style.display = "none";
+        showMessage("Checking reset link...", "success");
+        const session = await waitForSession();
+        if (session) {
+          showMessage("Please enter your new password.", "success");
+          form.style.display = "block";
+        } else {
+          showMessage(
+            "Invalid or expired reset link. Please request a new one.",
+            "error"
+          );
+        }
+      })();
 
       // Handle form submission
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        console.log("[FLOW] Password reset form submitted");
         submitButton.disabled = true;
         messageDiv.style.display = "none";
 
-        // Get password values
         const newPassword = newPasswordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
-        // Validate password length
         if (newPassword.length < 8) {
-          console.warn("[VALIDATION] Password too short");
           showMessage("Password must be at least 8 characters.", "error");
           submitButton.disabled = false;
           return;
         }
-
-        // Validate passwords match
         if (newPassword !== confirmPassword) {
-          console.warn("[VALIDATION] Passwords don't match");
           showMessage("Passwords do not match.", "error");
           submitButton.disabled = false;
           return;
         }
 
-        // Get the reset token from the URL
-        const { token, email } = getToken();
-        if (!token) {
-          console.error("[SECURITY] Attempt to reset password without token");
-          showMessage("Invalid or missing reset token.", "error");
-          submitButton.disabled = false;
-          return;
-        }
-
         try {
-          console.log("[API] Attempting password reset with token");
-
-          // Set the session with the access token
-          const { data: sessionData, error: sessionError } =
-            await supabase.auth.setSession({
-              access_token: token,
-              refresh_token: token,
-            });
-
-          if (sessionError) {
-            console.error("[API] Session setup failed:", sessionError);
-            throw sessionError;
+          showMessage("Updating password...", "success");
+          const { data, error } = await supabase.auth.updateUser({
+            password: newPassword,
+          });
+          if (error) {
+            console.error("[API] Password update failed:", error);
+            showMessage(error.message || "An error occurred.", "error");
+            submitButton.disabled = false;
+            return;
           }
-
-          console.log("[AUTH] Session established successfully");
-
-          // Now update the password
-          const { data: updateData, error: updateError } =
-            await supabase.auth.updateUser({
-              password: newPassword,
-            });
-
-          if (updateError) {
-            console.error("[API] Password update failed:", updateError);
-            throw updateError;
-          }
-
-          console.log("[API] Password reset successful");
           showMessage(
             "Password reset successfully! You can now log in to the app.",
             "success"
           );
           form.style.display = "none";
-
-          // Redirect to app after 2 seconds
           setTimeout(() => {
             window.location.href = "carpoolio://login";
           }, 2000);
@@ -234,16 +201,6 @@
           submitButton.disabled = false;
         }
       });
-
-      // Log initial token status
-      console.log("[INIT] Checking for token on page load");
-      const initialToken = getToken();
-      if (!initialToken) {
-        console.warn("[INIT] No token found on page load");
-        showMessage("Please use the reset link from your email.", "error");
-      } else {
-        console.log("[INIT] Token found on page load");
-      }
     </script>
   </body>
 </html>
