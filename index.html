@@ -38,6 +38,14 @@
       .button:hover {
         background-color: #0056b3;
       }
+      .error {
+        color: #d8000c;
+        background: #ffeaea;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -46,6 +54,7 @@
       <div class="preview">
         <p>If the app doesn't open automatically, click the button below.</p>
       </div>
+      <div id="error" class="error"></div>
       <div class="cta">
         <button onclick="openApp()" class="button">Open in App</button>
       </div>
@@ -54,39 +63,66 @@
     <script>
       // Initialize Supabase client
       const supabase = supabase.createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
+        "https://chpjrievgxrxswmbgjyl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI1NzAsImV4cCI6MjAyNTI0ODU3MH0.7kG9MR2yHOQBqxQo_6FkRGmFxfNqAQqAeknJfZVxvYs"
       );
+
+      function showError(message) {
+        const errorDiv = document.getElementById("error");
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+      }
 
       function getUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
-        return {
+        const params = {
           tripId: urlParams.get("tripId"),
           shareId: urlParams.get("shareId"),
         };
+
+        // Log for debugging
+        console.log("[URL] Params:", params);
+
+        if (!params.tripId || !params.shareId) {
+          showError(
+            "Invalid trip link. Please make sure you have the correct URL."
+          );
+          return null;
+        }
+
+        return params;
       }
 
-      function openApp() {
-        const { tripId, shareId } = getUrlParams();
+      async function openApp() {
+        const params = getUrlParams();
+        if (!params) return;
+
         // Using a custom URL scheme for your app
         const baseScheme = "carpoolio://";
-        const params = `trip/${tripId}?shareId=${shareId}`;
+        const deepLink = `trip/${params.tripId}?shareId=${params.shareId}`;
+        const fullUrl = baseScheme + deepLink;
+
+        console.log("[APP] Opening URL:", fullUrl);
 
         // Try to open the app
-        window.location.href = baseScheme + params;
+        window.location.href = fullUrl;
 
         // If app doesn't open after a delay, redirect to app store
         setTimeout(() => {
           if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            window.location.href = "https://apps.apple.com/your-app";
+            // Replace with your actual App Store URL
+            window.location.href =
+              "https://apps.apple.com/app/carpoolio/id6475511788";
           } else {
-            window.location.href = "https://play.google.com/store/your-app";
+            // Replace with your actual Play Store URL when available
+            window.location.href =
+              "https://play.google.com/store/apps/details?id=com.ernkerr.carpoolio";
           }
-        }, 1000);
+        }, 1500); // Increased timeout for slower devices
       }
 
       // Try to open the app immediately when the page loads
-      openApp();
+      window.onload = openApp;
     </script>
   </body>
 </html>

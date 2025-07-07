@@ -48,6 +48,10 @@
         font-size: 16px;
         cursor: pointer;
       }
+      button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
       .message {
         margin-top: 16px;
         padding: 12px;
@@ -94,22 +98,14 @@
     </div>
     <script type="module">
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-      // Initialize Supabase client with injected credentials (replaced at build time)
-      const SUPABASE_URL = "__SUPABASE_URL__";
-      const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
 
-      // Show a clear error if the config is missing (placeholders not replaced)
-      if (
-        SUPABASE_URL.includes("__SUPABASE_URL__") ||
-        SUPABASE_ANON_KEY.includes("__SUPABASE_ANON_KEY__")
-      ) {
-        document.body.innerHTML = `<div style='max-width: 400px; margin: 40px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); font-family: sans-serif; color: #d8000c; text-align: center;'>\n<b>Configuration Error</b><br>Your Supabase credentials were not injected at build time.<br>Please contact support or try again later.</div>`;
-        throw new Error(
-          "Supabase credentials missing: placeholders not replaced."
-        );
-      }
+      // Initialize Supabase client
+      const supabase = createClient(
+        "https://chpjrievgxrxswmbgjyl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI1NzAsImV4cCI6MjAyNTI0ODU3MH0.7kG9MR2yHOQBqxQo_6FkRGmFxfNqAQqAeknJfZVxvYs"
+      );
 
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log("[INIT] Reset password page loaded");
 
       // Get references to form elements
       const form = document.getElementById("resetForm");
@@ -120,31 +116,43 @@
 
       // Helper to show a message to the user
       function showMessage(text, type) {
+        console.log(`[UI] Showing ${type} message:`, text);
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
         messageDiv.style.display = "block";
       }
 
-      // Helper to extract the reset token from the URL (either as ?token=... or #access_token=...)
+      // Helper to extract the reset token from the URL
       function getToken() {
+        console.log("[SECURITY] Extracting token from URL");
         const params = new URLSearchParams(window.location.search);
         let token = params.get("token");
+
         if (!token && window.location.hash) {
+          console.log(
+            "[SECURITY] Token not found in query params, checking hash"
+          );
           const hashParams = new URLSearchParams(
             window.location.hash.substring(1)
           );
           token = hashParams.get("access_token");
         }
-        console.log("[DEBUG] Extracted token:", token);
+
+        if (token) {
+          console.log("[SECURITY] Token found:", token.slice(0, 10) + "...");
+        } else {
+          console.warn("[SECURITY] No token found in URL");
+        }
+
         return token;
       }
 
       // Handle form submission
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        console.log("[FLOW] Password reset form submitted");
         submitButton.disabled = true;
         messageDiv.style.display = "none";
-        console.log("[DEBUG] Form submitted");
 
         // Get password values
         const newPassword = newPasswordInput.value;
@@ -152,12 +160,15 @@
 
         // Validate password length
         if (newPassword.length < 8) {
+          console.warn("[VALIDATION] Password too short");
           showMessage("Password must be at least 8 characters.", "error");
           submitButton.disabled = false;
           return;
         }
+
         // Validate passwords match
         if (newPassword !== confirmPassword) {
+          console.warn("[VALIDATION] Passwords don't match");
           showMessage("Passwords do not match.", "error");
           submitButton.disabled = false;
           return;
@@ -166,32 +177,48 @@
         // Get the reset token from the URL
         const token = getToken();
         if (!token) {
+          console.error("[SECURITY] Attempt to reset password without token");
           showMessage("Invalid or missing reset token.", "error");
           submitButton.disabled = false;
           return;
         }
 
         try {
+          console.log("[API] Attempting password reset with token");
           // Attempt to update the user's password using the token
-          console.log("[DEBUG] Attempting password reset with token");
           const { data, error } = await supabase.auth.updateUser(
             { password: newPassword },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          if (error) throw error;
+
+          if (error) {
+            console.error("[API] Password reset failed:", error);
+            throw error;
+          }
+
+          console.log("[API] Password reset successful");
           showMessage(
             "Password reset successfully! You can now log in.",
             "success"
           );
           form.style.display = "none";
-          console.log("[DEBUG] Password reset successful");
         } catch (err) {
+          console.error("[ERROR] Password reset error:", err);
           showMessage(err.message || "An error occurred.", "error");
-          console.error("[ERROR] Password reset failed:", err);
         } finally {
           submitButton.disabled = false;
         }
       });
+
+      // Log initial token status
+      console.log("[INIT] Checking for token on page load");
+      const initialToken = getToken();
+      if (!initialToken) {
+        console.warn("[INIT] No token found on page load");
+        showMessage("Please use the reset link from your email.", "error");
+      } else {
+        console.log("[INIT] Token found on page load");
+      }
     </script>
   </body>
 </html>
