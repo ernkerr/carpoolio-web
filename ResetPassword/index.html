@@ -5,139 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reset Password | Carpoolio</title>
     <style>
-      :root {
-        --primary-color: #007aff;
-        --error-color: #ff3b30;
-        --success-color: #34c759;
-        --text-color: #000000;
-        --background-color: #f2f2f7;
-        --card-background: #ffffff;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --text-color: #ffffff;
-          --background-color: #000000;
-          --card-background: #1c1c1e;
-        }
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
-        background-color: var(--background-color);
-        color: var(--text-color);
-        min-height: 100vh;
+        font-family: sans-serif;
+        background: #f2f2f7;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        min-height: 100vh;
       }
-
       .container {
+        background: #fff;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
         width: 100%;
         max-width: 400px;
-        background: var(--card-background);
-        padding: 32px;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
       }
-
       h1 {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 24px;
         text-align: center;
+        margin-bottom: 24px;
       }
-
       .form-group {
         margin-bottom: 16px;
       }
-
       label {
         display: block;
         margin-bottom: 8px;
-        font-size: 14px;
-        font-weight: 500;
       }
-
       input {
         width: 100%;
         padding: 12px;
-        border: 1px solid rgba(128, 128, 128, 0.2);
+        border: 1px solid #ccc;
         border-radius: 8px;
-        font-size: 16px;
-        background: var(--card-background);
-        color: var(--text-color);
-        transition: border-color 0.2s;
       }
-
-      input:focus {
-        outline: none;
-        border-color: var(--primary-color);
-      }
-
       button {
         width: 100%;
         padding: 14px;
-        background: var(--primary-color);
-        color: white;
+        background: #007aff;
+        color: #fff;
         border: none;
         border-radius: 8px;
         font-size: 16px;
-        font-weight: 600;
         cursor: pointer;
-        transition: opacity 0.2s;
       }
-
-      button:hover {
-        opacity: 0.9;
-      }
-
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
       .message {
         margin-top: 16px;
         padding: 12px;
         border-radius: 8px;
-        font-size: 14px;
         text-align: center;
       }
-
       .error {
-        background: rgba(255, 59, 48, 0.1);
-        color: var(--error-color);
+        background: #ffeaea;
+        color: #d8000c;
       }
-
       .success {
-        background: rgba(52, 199, 89, 0.1);
-        color: var(--success-color);
-      }
-
-      .open-app {
-        display: none;
-        margin-top: 16px;
-        text-decoration: none;
-        text-align: center;
-      }
-
-      .open-app.visible {
-        display: block;
-      }
-
-      .password-requirements {
-        font-size: 12px;
-        color: rgba(128, 128, 128, 0.8);
-        margin-top: 4px;
+        background: #eaffea;
+        color: #4f8a10;
       }
     </style>
   </head>
@@ -154,9 +77,6 @@
             minlength="8"
             autocomplete="new-password"
           />
-          <div class="password-requirements">
-            Password must be at least 8 characters
-          </div>
         </div>
         <div class="form-group">
           <label for="confirmPassword">Confirm Password</label>
@@ -171,152 +91,94 @@
         <button type="submit" id="submitButton">Reset Password</button>
       </form>
       <div id="message" class="message" style="display: none"></div>
-      <a href="carpoolio://login" id="openApp" class="button open-app">
-        Open Carpoolio
-      </a>
     </div>
-
     <script type="module">
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-      // Initialize Supabase client with your project URL
+      // Initialize Supabase client with injected credentials (replaced at build time)
       const supabase = createClient(
         "__SUPABASE_URL__",
         "__SUPABASE_ANON_KEY__"
       );
 
-      // Get form elements
+      // Get references to form elements
       const form = document.getElementById("resetForm");
       const newPasswordInput = document.getElementById("newPassword");
       const confirmPasswordInput = document.getElementById("confirmPassword");
-      const submitButton = document.getElementById("submitButton");
       const messageDiv = document.getElementById("message");
-      const openAppButton = document.getElementById("openApp");
+      const submitButton = document.getElementById("submitButton");
 
-      // Helper to show message
+      // Helper to show a message to the user
       function showMessage(text, type) {
-        console.log("Showing message:", { text, type });
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
         messageDiv.style.display = "block";
       }
 
-      // Get URL parameters including hash fragments
-      function getUrlParams() {
-        // First try the URL search params
-        const searchParams = new URLSearchParams(window.location.search);
-        const token = searchParams.get("token");
-        const type = searchParams.get("type");
-
-        console.log("URL params:", { token, type });
-
-        // If no token in search params, try the hash
-        if (!token) {
+      // Helper to extract the reset token from the URL (either as ?token=... or #access_token=...)
+      function getToken() {
+        const params = new URLSearchParams(window.location.search);
+        let token = params.get("token");
+        if (!token && window.location.hash) {
           const hashParams = new URLSearchParams(
             window.location.hash.substring(1)
           );
-          const hashToken = hashParams.get("access_token");
-          console.log("Hash params:", { hashToken });
-          return {
-            token: hashToken,
-            type: "recovery",
-          };
+          token = hashParams.get("access_token");
         }
-
-        return { token, type };
+        console.log("[DEBUG] Extracted token:", token);
+        return token;
       }
 
-      // Password validation
-      function validatePasswords() {
+      // Handle form submission
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        submitButton.disabled = true;
+        messageDiv.style.display = "none";
+        console.log("[DEBUG] Form submitted");
+
+        // Get password values
         const newPassword = newPasswordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
-        console.log("Validating passwords:", {
-          passwordLength: newPassword.length,
-          passwordsMatch: newPassword === confirmPassword,
-        });
-
+        // Validate password length
         if (newPassword.length < 8) {
-          showMessage("Password must be at least 8 characters long", "error");
-          return false;
+          showMessage("Password must be at least 8 characters.", "error");
+          submitButton.disabled = false;
+          return;
         }
-
+        // Validate passwords match
         if (newPassword !== confirmPassword) {
-          showMessage("Passwords do not match", "error");
-          return false;
+          showMessage("Passwords do not match.", "error");
+          submitButton.disabled = false;
+          return;
         }
 
-        return true;
-      }
-
-      // Form submission handler
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        console.log("Form submitted");
-
-        // Disable form while processing
-        submitButton.disabled = true;
+        // Get the reset token from the URL
+        const token = getToken();
+        if (!token) {
+          showMessage("Invalid or missing reset token.", "error");
+          submitButton.disabled = false;
+          return;
+        }
 
         try {
-          // Validate passwords
-          if (!validatePasswords()) {
-            submitButton.disabled = false;
-            return;
-          }
-
-          // Get token from URL params
-          const { token, type } = getUrlParams();
-          console.log("Got token and type:", { token, type });
-
-          if (!token) {
-            showMessage("Invalid or missing reset token", "error");
-            return;
-          }
-
-          console.log("Attempting password reset with token");
-
-          // Update password
+          // Attempt to update the user's password using the token
+          console.log("[DEBUG] Attempting password reset with token");
           const { data, error } = await supabase.auth.updateUser(
-            { password: newPasswordInput.value },
+            { password: newPassword },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-
-          console.log("Password reset response:", { data, error });
-
-          if (error) {
-            throw error;
-          }
-
-          // Show success and open app button
-          showMessage("Password reset successfully!", "success");
-          openAppButton.classList.add("visible");
-          form.style.display = "none";
-        } catch (error) {
-          console.error("Password reset error:", error);
+          if (error) throw error;
           showMessage(
-            error.message || "An error occurred while resetting your password",
-            "error"
+            "Password reset successfully! You can now log in.",
+            "success"
           );
+          form.style.display = "none";
+          console.log("[DEBUG] Password reset successful");
+        } catch (err) {
+          showMessage(err.message || "An error occurred.", "error");
+          console.error("[ERROR] Password reset failed:", err);
         } finally {
           submitButton.disabled = false;
-        }
-      });
-
-      // Check token on page load
-      window.addEventListener("load", () => {
-        console.log("Page loaded, checking token");
-        form.reset();
-
-        // Check if we have a valid token
-        const { token, type } = getUrlParams();
-        console.log("Initial token check:", { token, type });
-
-        if (!token) {
-          showMessage(
-            "Invalid or expired reset link. Please request a new password reset.",
-            "error"
-          );
-          submitButton.disabled = true;
         }
       });
     </script>
