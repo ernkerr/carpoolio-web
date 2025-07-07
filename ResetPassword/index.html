@@ -191,22 +191,21 @@
         try {
           console.log("[API] Attempting password reset with token");
 
-          // First verify the recovery token
-          const { data: verifyData, error: verifyError } =
-            await supabase.auth.verifyOtp({
-              type: "recovery",
-              token: token,
-              email: email,
+          // Set the session with the access token
+          const { data: sessionData, error: sessionError } =
+            await supabase.auth.setSession({
+              access_token: token,
+              refresh_token: token,
             });
 
-          if (verifyError) {
-            console.error("[API] Token verification failed:", verifyError);
-            throw verifyError;
+          if (sessionError) {
+            console.error("[API] Session setup failed:", sessionError);
+            throw sessionError;
           }
 
-          console.log("[AUTH] Token verified successfully");
+          console.log("[AUTH] Session established successfully");
 
-          // Now that we have a valid session from verifyOtp, update the password
+          // Now update the password
           const { data: updateData, error: updateError } =
             await supabase.auth.updateUser({
               password: newPassword,
