@@ -27,12 +27,30 @@ try {
     SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 6) + "..." : undefined
   );
 
-  // Replace the placeholders with actual values
-  content = content.replace('"__SUPABASE_URL__"', `"${SUPABASE_URL}"`);
-  content = content.replace(
+  // Debug: print lines containing the placeholders before replacement
+  const lines = content.split("\n");
+  const urlLineBefore = lines.find((line) => line.includes("__SUPABASE_URL__"));
+  const keyLineBefore = lines.find((line) =>
+    line.includes("__SUPABASE_ANON_KEY__")
+  );
+  console.log("Line with SUPABASE_URL before:", urlLineBefore);
+  console.log("Line with SUPABASE_ANON_KEY before:", keyLineBefore);
+
+  // Replace all occurrences of the placeholders with actual values
+  content = content.replaceAll('"__SUPABASE_URL__"', `"${SUPABASE_URL}"`);
+  content = content.replaceAll(
     '"__SUPABASE_ANON_KEY__"',
     `"${SUPABASE_ANON_KEY}"`
   );
+
+  // Debug: print lines containing the placeholders after replacement
+  const linesAfter = content.split("\n");
+  const urlLineAfter = linesAfter.find((line) => line.includes(SUPABASE_URL));
+  const keyLineAfter = linesAfter.find((line) =>
+    line.includes(SUPABASE_ANON_KEY.slice(0, 6))
+  );
+  console.log("Line with SUPABASE_URL after:", urlLineAfter);
+  console.log("Line with SUPABASE_ANON_KEY after:", keyLineAfter);
 
   // Check if replacement was successful
   if (
