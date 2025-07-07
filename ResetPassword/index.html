@@ -127,6 +127,7 @@
         console.log("[SECURITY] Extracting token from URL");
         const params = new URLSearchParams(window.location.search);
         let token = params.get("token");
+        let email = params.get("email");
 
         if (!token && window.location.hash) {
           console.log(
@@ -136,15 +137,19 @@
             window.location.hash.substring(1)
           );
           token = hashParams.get("access_token");
+          email = hashParams.get("email");
         }
 
         if (token) {
           console.log("[SECURITY] Token found:", token.slice(0, 10) + "...");
+          if (email) {
+            console.log("[SECURITY] Email found:", email);
+          }
         } else {
           console.warn("[SECURITY] No token found in URL");
         }
 
-        return token;
+        return { token, email };
       }
 
       // Handle form submission
@@ -175,7 +180,7 @@
         }
 
         // Get the reset token from the URL
-        const token = getToken();
+        const { token, email } = getToken();
         if (!token) {
           console.error("[SECURITY] Attempt to reset password without token");
           showMessage("Invalid or missing reset token.", "error");
@@ -190,8 +195,8 @@
           const { data: verifyData, error: verifyError } =
             await supabase.auth.verifyOtp({
               type: "recovery",
-              email: null, // we don't have the email, it's encoded in the token
               token: token,
+              email: email,
             });
 
           if (verifyError) {
