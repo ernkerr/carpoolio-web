@@ -100,14 +100,12 @@
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
       // Initialize Supabase client
-      const SUPABASE_URL = "https://chpjrievgxrxswmbgjyl.supabase.co";
-      const SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI1NzAsImV4cCI6MjAyNTI0ODU3MH0.7kG9MR2yHOQBqxQo_6FkRGmFxfNqAQqAeknJfZVxvYs";
+      const supabase = createClient(
+        "https://chpjrievgxrxswmbgjyl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI1NzAsImV4cCI6MjAyNTI0ODU3MH0.7kG9MR2yHOQBqxQo_6FkRGmFxfNqAQqAeknJfZVxvYs"
+      );
 
       console.log("[INIT] Reset password page loaded");
-      console.log("[CONFIG] Using Supabase URL:", SUPABASE_URL);
-
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Get references to form elements
       const form = document.getElementById("resetForm");
