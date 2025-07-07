@@ -96,11 +96,10 @@
       </form>
       <div id="message" class="message" style="display: none"></div>
     </div>
-    <script type="module">
-      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-      // Initialize Supabase client
-      const supabase = createClient(
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      // Initialize Supabase client using the global window.supabase
+      const supabase = window.supabase.createClient(
         "https://chpjrievgxrxswmbgjyl.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocGpyaWV2Z3hyeHN3bWJnanlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDIxNDgsImV4cCI6MjA1OTI3ODE0OH0.Mt8wplXkCOtXb0bShclHgaodX06oEiX4xpMkvwsCic4"
       );
