@@ -20,8 +20,8 @@
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       }
       .button {
-        background-color: #8ed9ca;
-        color: black;
+        background-color: black;
+        color: white;
         border: none;
         padding: 12px 24px;
         border-radius: 8px;
@@ -34,15 +34,31 @@
       .button:hover {
         background-color: #78b4a8;
       }
+      .store-link {
+        display: block;
+        margin-top: 30px;
+        font-size: 16px;
+      }
+      .store-link a {
+        color: #007aff;
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Opening Carpoolio...</h1>
-      <p>If you aren't redirected, press the button below.</p>
-      <button onclick="openApp()" class="button">
-        If you aren't redirected, press here
-      </button>
+      <h1>Open Carpoolio</h1>
+      <p>If you aren't redirected, press the button below to open the app.</p>
+      <button onclick="openApp()" class="button">Open Carpoolio</button>
+      <div class="store-link">
+        Don’t have the app?
+        <a
+          href="https://apps.apple.com/us/app/carpoolio/id6747052428"
+          target="_blank"
+          rel="noopener"
+          >Download it from the App Store</a
+        >.
+      </div>
     </div>
     <script>
       function getUrlParams() {
@@ -53,9 +69,6 @@
         };
         console.log("[URL] Params:", params);
         if (!params.tripId || !params.shareId) {
-          // If missing params, just go to App Store
-          window.location.href =
-            "https://apps.apple.com/us/app/carpoolio/id6747052428";
           return null;
         }
         return params;
@@ -69,10 +82,6 @@
         const fullUrl = baseScheme + deepLink;
         console.log("[APP] Opening URL:", fullUrl);
         window.location.href = fullUrl;
-        setTimeout(() => {
-          window.location.href =
-            "https://apps.apple.com/us/app/carpoolio/id6747052428";
-        }, 1500);
       }
 
       // Try to open the app immediately when the page loads
